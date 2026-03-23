@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SalesPulse Admin</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<div class="navbar">
+    <div class="logo">SalesPulse <span class="admin-badge">Admin</span></div>
+    <div class="navbar-right">
+        <span class="live-dot"></span>
+        <span id="live-clock" class="live-clock"></span>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="dashboard">
+
+<!-- ================= KPI CARDS ================= -->
+<div class="dashboard-grid">
+
+    <div class="dashboard-card kpi-card">
+        <h3>Today's Revenue</h3>
+        <h2 id="kpi-today-revenue">${{ today_revenue }}</h2>
+        <p class="kpi-sub">⚡ Live — updates every 30s</p>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>30 Day Revenue</h3>
+        <h2 id="kpi-revenue-30">${{ revenue_30 }}</h2>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>Profit</h3>
+        <h2>${{ profit }}</h2>
+        <p>ROI: {{ roi }}%</p>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>Today's Orders</h3>
+        <h2 id="kpi-today-orders">{{ today_orders }}</h2>
+        <p class="kpi-sub">⚡ Live</p>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>30 Day Orders</h3>
+        <h2 id="kpi-orders-30">{{ orders_30 }}</h2>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>Inventory Health</h3>
+        <h2>{{ inventory_status }}</h2>
+    </div>
+
+</div>
+
+
+<!-- ================= TOGGLE BUTTONS ================= -->
+<div class="dashboard-tabs">
+    <button class="tab-btn active" onclick="showML(this)">📊 ML Predictions</button>
+    <button class="tab-btn" onclick="showBusiness(this)">📈 Business Analysis</button>
+</div>
+
+
+<!-- ================= ML PREDICTIONS ================= -->
+<div id="ml-section" class="dashboard-grid">
+
+    <div class="dashboard-card kpi-card">
+        <h3>Next Hour Sales Forecast</h3>
+        <h2 id="kpi-prediction">{{ prediction }} <span class="unit-label">Units</span></h2>
+        <p class="kpi-sub">Blended: dataset + today's live orders</p>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>30-Day Forecasted Sales</h3>
+        <h2>{{ forecast_30_day }} <span class="unit-label">Units</span></h2>
+        <p class="kpi-sub">Prophet AI model</p>
+    </div>
+
+    <div class="dashboard-card kpi-card">
+        <h3>Maximum Revenue Potential</h3>
+        <h2>${{ max_revenue }}</h2>
+        <p class="kpi-sub">Annual projection (best-day × 365)</p>
+    </div>
+
+    <div class="dashboard-card category-price-card">
+        <h3>Optimal Price Range by Category</h3>
+        <div class="cat-icon-grid">
+
+            <div class="cat-icon-item" onclick="togglePrice(this)">
+                <div class="cat-icon-circle cat-toys">
+                    <span class="cat-emoji">🧸</span>
+                </div>
+                <p class="cat-label">Toys</p>
+                <div class="cat-price-popup">{{ category_price_ranges.get('Toys', 'N/A') }}</div>
+            </div>
+
+            <div class="cat-icon-item" onclick="togglePrice(this)">
+                <div class="cat-icon-circle cat-furniture">
+                    <span class="cat-emoji">🛋️</span>
+                </div>
+                <p class="cat-label">Furniture</p>
+                <div class="cat-price-popup">{{ category_price_ranges.get('Furniture', 'N/A') }}</div>
+            </div>
+
+            <div class="cat-icon-item" onclick="togglePrice(this)">
+                <div class="cat-icon-circle cat-groceries">
+                    <span class="cat-emoji">🛒</span>
+                </div>
+                <p class="cat-label">Groceries</p>
+                <div class="cat-price-popup">{{ category_price_ranges.get('Groceries', 'N/A') }}</div>
+            </div>
+
+            <div class="cat-icon-item" onclick="togglePrice(this)">
+                <div class="cat-icon-circle cat-clothing">
+                    <span class="cat-emoji">👗</span>
+                </div>
+                <p class="cat-label">Clothing</p>
+                <div class="cat-price-popup">{{ category_price_ranges.get('Clothing', category_price_ranges.get('Fashion', 'N/A')) }}</div>
+            </div>
+
+            <div class="cat-icon-item" onclick="togglePrice(this)">
+                <div class="cat-icon-circle cat-electronics">
+                    <span class="cat-emoji">💻</span>
+                </div>
+                <p class="cat-label">Electronics</p>
+                <div class="cat-price-popup">{{ category_price_ranges.get('Electronics', 'N/A') }}</div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ================= BUSINESS ANALYSIS ================= -->
+<div id="business-section" class="dashboard-grid hidden-section">
+
+    <!-- Revenue Trend: full-width, scrollable + zoomable -->
+    <div class="dashboard-card chart-card wide-card">
+        <div class="chart-header">
+            <h3>📅 Revenue Trend — Full History to Today</h3>
+            <div class="chart-controls">
+                <button class="ctrl-btn" onclick="resetZoom('revenueChart')">Reset Zoom</button>
+                <span class="hint">🖱 Scroll to zoom &nbsp;|&nbsp; Drag to pan &nbsp;|&nbsp; Click a point for detail</span>
+            </div>
+        </div>
+        <div class="scrollable-chart-wrap">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Sales Forecast -->
+    <div class="dashboard-card chart-card">
+        <div class="chart-header">
+            <h3>🤖 Sales Forecast (AI · 30 Days)</h3>
+            <button class="ctrl-btn" onclick="resetZoom('forecastChart')">Reset</button>
+        </div>
+        <canvas id="forecastChart"></canvas>
+    </div>
+
+    <!-- Profit Trend: full dates, up to today -->
+    <div class="dashboard-card chart-card">
+        <div class="chart-header">
+            <h3>💰 Profit Trend — Up to Today</h3>
+            <button class="ctrl-btn" onclick="resetZoom('profitChart')">Reset</button>
+        </div>
+        <canvas id="profitChart"></canvas>
+    </div>
+
+    <!-- Category Sales -->
+    <div class="dashboard-card chart-card">
+        <h3>🛒 Sales by Category</h3>
+        <canvas id="categoryChart"></canvas>
+    </div>
+
+    <!-- Top Products -->
+    <div class="dashboard-card chart-card">
+        <h3>🏆 Top Selling Products</h3>
+        <canvas id="topProductsChart"></canvas>
+    </div>
+
+    <!-- SHAP -->
+    <div class="dashboard-card chart-card">
+        <h3>🧠 AI Feature Importance (SHAP)</h3>
+        <canvas id="shapChart"></canvas>
+    </div>
+
+    <!-- Live Hourly Revenue: full-width -->
+    <div class="dashboard-card chart-card wide-card">
+        <div class="chart-header">
+            <h3>⚡ Today's Hourly Revenue — Live</h3>
+            <span class="hint">Auto-refreshes every 30 seconds</span>
+        </div>
+        <canvas id="hourlyChart"></canvas>
+    </div>
+
+</div>
+</div><!-- /dashboard -->
+
+
+<!-- ================= FLASK DATA BLOB ================= -->
+<script id="flask-data" type="application/json">
+{
+    "trend_dates":     {{ trend_dates | tojson }},
+    "trend_values":    {{ trend_values | tojson }},
+    "forecast_dates":  {{ forecast_dates | tojson }},
+    "forecast_values": {{ forecast_values | tojson }},
+    "actual_values":   {{ actual_values | tojson }},
+    "categories":      {{ categories | tojson }},
+    "category_sales":  {{ category_sales | tojson }},
+    "profit_dates":    {{ profit_dates | tojson }},
+    "profits":         {{ profits | tojson }},
+    "top_products":    {{ top_products | tojson }},
+    "product_sales":   {{ product_sales | tojson }},
+    "features":        {{ features | tojson }},
+    "importance":      {{ importance | tojson }}
+}
+</script>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+
+/* ── Data ── */
+const D = JSON.parse(document.getElementById("flask-data").textContent);
+
+/* ── Palette ── */
+const COLORS = ["#4A6CF7","#22C55E","#F97316","#EF4444","#A855F7","#06B6D4","#F59E0B","#EC4899"];
+
+/* ── Chart registry (for zoom reset) ── */
+const REG = {};
+function resetZoom(id) { if (REG[id]) REG[id].resetZoom(); }
+
+/* ── Tab toggle ── */
+function showML(btn) {
+    document.getElementById("ml-section").style.display      = "grid";
+    document.getElementById("business-section").style.display = "none";
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+}
+function showBusiness(btn) {
+    document.getElementById("ml-section").style.display      = "none";
+    document.getElementById("business-section").style.display = "grid";
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    setTimeout(() => Object.values(REG).forEach(c => c.resize()), 60);
+}
+
+/* ── Shared zoom plugin config ── */
+function zoomPlugin() {
+    return {
+        zoom: {
+            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
+            pan:  { enabled: true, mode: "x" }
+        }
+    };
+}
+
+/* ══════════════════════════════════════════════
+   1. REVENUE TREND — scrollable + zoomable + pan
+   ══════════════════════════════════════════════ */
+(function () {
+    const ctx   = document.getElementById("revenueChart").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: D.trend_dates,
+            datasets: [{
+                label: "Revenue ($)",
+                data:  D.trend_values,
+                borderColor: "#4A6CF7",
+                backgroundColor: "rgba(74,108,247,0.07)",
+                fill: true,
+                tension: 0.3,
+                pointRadius:      D.trend_dates.length > 200 ? 0 : 3,
+                pointHoverRadius: 7,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                ...zoomPlugin(),
+                tooltip: { callbacks: { label: c => ` $${c.parsed.y.toLocaleString()}` } }
+            },
+            onClick(evt, els) {
+                if (els.length) {
+                    const i = els[0].index;
+                    alert(`📅 ${D.trend_dates[i]}\n💰 Revenue: $${D.trend_values[i].toLocaleString()}`);
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
+                y: { beginAtZero: true, ticks: { callback: v => "$" + v.toLocaleString() } }
+            }
+        }
+    });
+    REG["revenueChart"] = chart;
+})();
+
+
+/* ══════════════════════════════════
+   2. SALES FORECAST — Actual vs Predicted
+   ══════════════════════════════════ */
+(function () {
+    const ctx   = document.getElementById("forecastChart").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: D.forecast_dates,
+            datasets: [
+                {
+                    label: "Actual Sales",
+                    data:  D.actual_values,
+                    borderColor: "#4A6CF7",
+                    backgroundColor: "rgba(74,108,247,0.07)",
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                    spanGaps: false   // show gap where actual ends
+                },
+                {
+                    label: "AI Forecast",
+                    data:  D.forecast_values,
+                    borderColor: "#22C55E",
+                    backgroundColor: "rgba(34,197,94,0.07)",
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                    borderDash: [6, 3]  // dashed line for predictions
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                ...zoomPlugin(),
+                legend: {
+                    position: "top",
+                    labels: { usePointStyle: true, padding: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: c => {
+                            if (c.parsed.y === null) return null;
+                            return ` ${c.dataset.label}: ${c.parsed.y} units`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
+                y: { beginAtZero: true, ticks: { callback: v => v + " u" } }
+            }
+        }
+    });
+    REG["forecastChart"] = chart;
+})();
+
+
+/* ══════════════════════════════════════════════
+   3. PROFIT TREND — with profit_dates, up to today
+   ══════════════════════════════════════════════ */
+(function () {
+    const ctx   = document.getElementById("profitChart").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: D.profit_dates,
+            datasets: [{
+                label: "Profit ($)",
+                data:  D.profits,
+                borderColor: "#10B981",
+                backgroundColor: "rgba(16,185,129,0.07)",
+                fill: true,
+                tension: 0.3,
+                pointRadius:      D.profit_dates.length > 200 ? 0 : 3,
+                pointHoverRadius: 7,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                ...zoomPlugin(),
+                tooltip: { callbacks: { label: c => ` $${c.parsed.y.toLocaleString()}` } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
+                y: { beginAtZero: true, ticks: { callback: v => "$" + v.toLocaleString() } }
+            }
+        }
+    });
+    REG["profitChart"] = chart;
+})();
+
+
+/* ══════════════════════════════════════════════
+   4. CATEGORY SALES — doughnut, reactive legend
+   ══════════════════════════════════════════════ */
+(function () {
+    if (!D.categories.length) return;
+    const ctx   = document.getElementById("categoryChart").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+            labels: D.categories,
+            datasets: [{
+                data: D.category_sales,
+                backgroundColor: COLORS,
+                hoverOffset: 14,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "bottom", labels: { padding: 14, boxWidth: 14 } },
+                tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed.toLocaleString()} units` } }
+            }
+        }
+    });
+    REG["categoryChart"] = chart;
+})();
+
+
+/* ════════════════════════════════════════
+   5. TOP PRODUCTS — horizontal bar, reactive
+   ════════════════════════════════════════ */
+(function () {
+    if (!D.top_products.length) return;
+    const ctx   = document.getElementById("topProductsChart").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: D.top_products,
+            datasets: [{
+                label: "Units Sold",
+                data: D.product_sales,
+                backgroundColor: COLORS,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => ` ${c.parsed.x.toLocaleString()} units` } }
+            },
+            scales: {
+                x: { beginAtZero: true },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+    REG["topProductsChart"] = chart;
+})();
+
+
+/* ══════════════════════════════════════════
+   6. SHAP FEATURE IMPORTANCE — sorted, reactive
+   ══════════════════════════════════════════ */
+(function () {
+    if (!D.features.length) return;
+    const pairs = D.features.map((f, i) => [f, D.importance[i]]);
+    pairs.sort((a, b) => b[1] - a[1]);
+    const ctx   = document.getElementById("shapChart").getContext("2d");
+    const chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: pairs.map(p => p[0]),
+            datasets: [{
+                label: "SHAP Importance",
+                data:  pairs.map(p => p[1]),
+                backgroundColor: COLORS,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+    REG["shapChart"] = chart;
+})();
+
+
+/* ════════════════════════════════════════════
+   7. HOURLY REVENUE — live bar, auto-refresh
+   ════════════════════════════════════════════ */
+let hourlyChart = null;
+
+function buildOrUpdateHourly(labels, values) {
+    const ctx = document.getElementById("hourlyChart").getContext("2d");
+    if (hourlyChart) {
+        hourlyChart.data.labels              = labels;
+        hourlyChart.data.datasets[0].data    = values;
+        hourlyChart.update("active");
+        return;
+    }
+    hourlyChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Revenue ($)",
+                data: values,
+                backgroundColor: "rgba(74,108,247,0.75)",
+                borderColor: "#4A6CF7",
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => ` $${c.parsed.y.toLocaleString()}` } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => "$" + v } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+    REG["hourlyChart"] = hourlyChart;
+}
+
+
+/* ════════════════════════════════════════════
+   LIVE STATS FETCH — every 30 seconds
+   ════════════════════════════════════════════ */
+async function fetchLiveStats() {
+    try {
+        const res  = await fetch("/api/live-stats");
+        const data = await res.json();
+        if (data.error) return;
+
+        document.getElementById("kpi-today-revenue").textContent =
+            "$" + data.today_revenue.toLocaleString();
+        document.getElementById("kpi-today-orders").textContent  = data.today_orders;
+        document.getElementById("kpi-revenue-30").textContent    =
+            "$" + data.revenue_30.toLocaleString();
+        document.getElementById("kpi-orders-30").textContent     = data.orders_30;
+        document.getElementById("kpi-prediction").innerHTML =
+            data.prediction + ' <span class="unit-label">Units</span>';
+
+        if (data.hourly_labels && data.hourly_labels.length) {
+            buildOrUpdateHourly(data.hourly_labels, data.hourly_values);
+        }
+    } catch (e) { /* silent */ }
+}
+
+fetchLiveStats();
+setInterval(fetchLiveStats, 30000);
+
+
+/* ═══════════ CATEGORY PRICE TOGGLE ═══════════ */
+function togglePrice(el) {
+    const popup = el.querySelector(".cat-price-popup");
+    const circle = el.querySelector(".cat-icon-circle");
+    const isOpen = el.classList.contains("active");
+
+    // Close all others
+    document.querySelectorAll(".cat-icon-item.active").forEach(item => {
+        item.classList.remove("active");
+        item.querySelector(".cat-price-popup").style.opacity = "0";
+        item.querySelector(".cat-price-popup").style.maxHeight = "0";
+    });
+
+    if (!isOpen) {
+        el.classList.add("active");
+        popup.style.opacity = "1";
+        popup.style.maxHeight = "40px";
+    }
+}
+
+/* ═══════════ LIVE CLOCK ═══════════ */
+function tick() {
+    const n = new Date();
+    document.getElementById("live-clock").textContent =
+        n.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+tick();
+setInterval(tick, 1000);
+
+</script>
+</body>
+</html>

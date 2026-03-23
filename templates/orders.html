@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - ShopPulse</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <a href="{{ url_for('shop') }}" class="logo">ShopPulse</a>
+    <div style="display:flex;gap:20px;align-items:center;">
+        <a href="/shop" style="color:#4e73df;font-weight:600;text-decoration:none;">← Back to Shop</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2 style="margin-bottom:24px;color:#4e73df;">My Orders</h2>
+
+    {% if orders %}
+    <table class="orders-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for o in orders %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ o.product }}</td>
+                <td>${{ o.price }}</td>
+                <td>{{ o.date[:16] }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+        <h2>No orders yet</h2>
+        <p>Head to the shop and buy something!</p>
+        <a href="/shop" class="buy-btn" style="display:inline-block;margin-top:20px;">Go Shopping</a>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

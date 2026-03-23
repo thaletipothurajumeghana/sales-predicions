@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- FIX 1: Viewport Added -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ShopPulse</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <a href="{{ url_for('shop') }}" class="logo">ShopPulse</a>
+
+    <form method="GET" action="/shop" class="search-bar">
+        <input type="text" name="search" placeholder="Search products..." value="{{ search or '' }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <a href="/orders" class="nav-link-orders">My Orders</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<div class="container">
+
+{% if products %}
+
+    
+
+    <div class="grid">
+        {% for p in products %}
+        <div class="card">
+
+            <!-- FIX 2: ALT TEXT ADDED -->
+            <img src="{{ p.image }}" alt="{{ p.name }}" class="product-img">
+
+            <span class="badge">Popular</span>
+
+            <h3>{{ p.name }}</h3>
+            <p>{{ p.category }}</p>
+
+            <div class="price">${{ p.price }}</div>
+
+            <a href="/buy/{{ p.name }}/{{ p.price }}" class="buy-btn">Buy Now</a>
+
+        </div>
+        {% endfor %}
+    </div>
+
+{% else %}
+
+    <div class="empty">
+        <img src="https://images.unsplash.com/photo-1586769852044-692d6e3703f0?auto=format&fit=crop&w=600&q=80"
+             alt="Empty Basket"
+             class="empty-img">
+        <h2>Item Not Found</h2>
+        <p>Try searching something else</p>
+    </div>
+
+{% endif %}
+
+</div>
+
+</body>
+</html>
