@@ -6,7 +6,7 @@ services:
     branch: main
     autoDeploy: true
     buildCommand: pip install --prefer-binary -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
     envVars:
       - key: SECRET_KEY
         value: replace-with-your-secret
