@@ -2,7 +2,7 @@ Flask==3.0.0
 numpy==2.0.0
 pandas==2.2.0
 scikit-learn==1.8.0
-xgboost==1.8.2
+xgboost==2.0.3
 prophet==1.1.5
 shap==1.5.2
 matplotlib==3.8.0
