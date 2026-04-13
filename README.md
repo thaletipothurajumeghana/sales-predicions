@@ -55,6 +55,18 @@ GitHub Pages does not support backend Flask apps. Use one of these:
 - Railway / Render / Replit / PythonAnywhere
 - Azure App Service / AWS Elastic Beanstalk
 
+### Render deployment
+
+This repo includes `render.yaml` for Render service configuration. To deploy:
+
+1. Connect your GitHub repo to Render.
+2. Create a new Web Service.
+3. Use the `main` branch.
+4. Render will run:
+   - build: `pip install -r requirements.txt`
+   - start: `gunicorn app:app`
+5. Set Render environment variables for `SECRET_KEY`, `ADMIN_EMAIL`, `DATABASE_PATH`, `MODEL_DATA_PATH`, and `DEBUG`.
+
 ### Environment variables
 
 Create a `.env` file locally or configure env vars in your platform:

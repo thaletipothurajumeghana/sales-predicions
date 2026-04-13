@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: sales-predictions
+    env: python
+    plan: starter
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        value: replace-with-your-secret
+      - key: ADMIN_EMAIL
+        value: admin@example.com
+      - key: DATABASE_PATH
+        value: database.db
+      - key: MODEL_DATA_PATH
+        value: modified_sales_dataset.csv
+      - key: DEBUG
+        value: False
+      - key: PORT
+        value: 5000
