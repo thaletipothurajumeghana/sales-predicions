@@ -96,7 +96,7 @@ def initialize_app():
     initialize_ai()
     app_initialized = True
 
-@app.before_first_request
+@app.before_serving
 def startup():
     initialize_app()
 
