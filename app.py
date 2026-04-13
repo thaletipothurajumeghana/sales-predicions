@@ -96,10 +96,6 @@ def initialize_app():
     initialize_ai()
     app_initialized = True
 
-@app.before_request
-def startup():
-    initialize_app()
-
 # =============================
 # HOME
 # =============================
@@ -585,6 +581,14 @@ def my_orders():
     return render_template("orders.html", orders=orders)
 
 
+# Initialize the app when the module is imported by Gunicorn or other WSGI servers.
+try:
+    initialize_app()
+except Exception as e:
+    import traceback
+    print("App initialization failed:", e)
+    traceback.print_exc()
+
 # =============================
 # RUN SERVER
 # =============================
@@ -592,6 +596,5 @@ def my_orders():
 if __name__ == "__main__":
 
     print("Starting Flask Server...")
-    initialize_app()
     debug_mode = os.getenv("DEBUG", "False").lower() in ("1", "true", "yes")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=debug_mode)
