@@ -6,3 +6,6 @@ xgboost==1.8.2
 prophet==1.1.5
 shap==1.5.2
 matplotlib==3.8.0
+gunicorn==22.1.0
+python-dotenv==1.0.0
+bcrypt==4.0.1

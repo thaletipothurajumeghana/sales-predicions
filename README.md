@@ -38,10 +38,10 @@ A Flask application with AI-driven retail forecasting and simple e-commerce flow
 
 ## 🔐 Admin account
 
-- default admin email in `app.py`: `thaletipothurajumeghana@gmail.com`
-- password must be created by registering
+- default admin email is now configured via environment variable `ADMIN_EMAIL`
+- password storage uses bcrypt hashing for deployment-ready security
 
-## 🚀 GitHub hosting
+## 🚀 Deployment-ready setup
 
 ### GitHub repository
 
@@ -55,14 +55,27 @@ GitHub Pages does not support backend Flask apps. Use one of these:
 - Railway / Render / Replit / PythonAnywhere
 - Azure App Service / AWS Elastic Beanstalk
 
+### Environment variables
+
+Create a `.env` file locally or configure env vars in your platform:
+
+```env
+SECRET_KEY=your-strong-secret-key
+ADMIN_EMAIL=admin@example.com
+DATABASE_PATH=database.db
+MODEL_DATA_PATH=modified_sales_dataset.csv
+DEBUG=False
+```
+
 ## 🧹 Recommended `.gitignore`
 
 - Excludes `database.db`, dataset, virtualenv, and logs
 
 ## 🧩 Improvements
 
-- Use environment variables for `SECRET_KEY` and admin email
-- Secure password flow with hashing + salted auth (bcrypt)
+- Use environment variables for `SECRET_KEY`, admin email, database path, and model dataset path
+- Secure password flow with hashing + salted auth (`bcrypt`)
+- Run with Gunicorn in production via `Procfile`
 - Add tests (`pytest`) and CI workflows
 
 ## 📝 License

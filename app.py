@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
 import numpy as np
@@ -5,13 +6,25 @@ import pandas as pd
 from datetime import datetime
 import hashlib
 
+# Optional local environment support
+from dotenv import load_dotenv
+import bcrypt
+
 # Import model
 from retail_model import RetailAI
 
-app = Flask(__name__)
-app.secret_key = "supersecretkey"
+load_dotenv()
 
-ADMIN_EMAIL = "thaletipothurajumeghana@gmail.com"
+# App and security configuration
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", os.urandom(24))
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("FLASK_ENV", "production") != "development"
+
+DATABASE_PATH = os.getenv("DATABASE_PATH", "database.db")
+MODEL_DATA_PATH = os.getenv("MODEL_DATA_PATH", "modified_sales_dataset.csv")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@example.com")
 
 # =============================
 # INITIALIZE AI SYSTEM
@@ -20,9 +33,19 @@ ADMIN_EMAIL = "thaletipothurajumeghana@gmail.com"
 ai_system = None
 
 
+def hash_password(password):
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(password, stored_hash):
+    if stored_hash.startswith("$2b$") or stored_hash.startswith("$2a$"):
+        return bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8"))
+    return hashlib.sha256(password.encode("utf-8")).hexdigest() == stored_hash
+
+
 def initialize_ai():
     global ai_system
-    ai_system = RetailAI("modified_sales_dataset.csv")
+    ai_system = RetailAI(MODEL_DATA_PATH)
     
     # Skip database update during startup to avoid breaking XGBoost
     print("AI initialized with CSV data only (database update skipped at startup)")
@@ -37,7 +60,7 @@ def initialize_ai():
 # =============================
 
 def init_db():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
 
     c.execute("""
@@ -63,8 +86,19 @@ def init_db():
     conn.close()
 
 
-init_db()
-initialize_ai()
+app_initialized = False
+
+def initialize_app():
+    global app_initialized
+    if app_initialized:
+        return
+    init_db()
+    initialize_ai()
+    app_initialized = True
+
+@app.before_first_request
+def startup():
+    initialize_app()
 
 # =============================
 # HOME
@@ -85,20 +119,16 @@ def login():
     if request.method == "POST":
 
         email = request.form["email"]
-        password = hashlib.sha256(request.form["password"].encode()).hexdigest()
+        password = request.form["password"]
 
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect(DATABASE_PATH)
         c = conn.cursor()
 
-        c.execute(
-            "SELECT * FROM users WHERE email=? AND password=?",
-            (email, password)
-        )
-
+        c.execute("SELECT * FROM users WHERE email=?", (email,))
         user = c.fetchone()
         conn.close()
 
-        if user:
+        if user and verify_password(password, user[3]):
             session["user"] = email
 
             if email == ADMIN_EMAIL:
@@ -120,9 +150,9 @@ def register():
 
         name = request.form["name"]
         email = request.form["email"]
-        password = hashlib.sha256(request.form["password"].encode()).hexdigest()
+        password = hash_password(request.form["password"])
 
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect(DATABASE_PATH)
         c = conn.cursor()
 
         c.execute(
@@ -222,7 +252,7 @@ def buy(product, price):
 
     price = float(price)   # 🔥 ADD THIS LINE
 
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
 
     c.execute(
@@ -246,7 +276,7 @@ def dashboard():
     # =============================
     # DATABASE METRICS
     # =============================
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
 
     today = datetime.now().date()
@@ -284,7 +314,7 @@ def dashboard():
     # =============================
     # LOAD LIVE ORDERS FROM DATABASE
     # =============================
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     orders_df = pd.read_sql_query("SELECT * FROM orders", conn)
     conn.close()
 
@@ -496,7 +526,7 @@ def live_stats():
         return {"error": "unauthorized"}, 403
 
     from flask import jsonify
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
     today = datetime.now().date()
 
@@ -545,7 +575,7 @@ def live_stats():
 def my_orders():
     if "user" not in session:
         return redirect("/")
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     c = conn.cursor()
     c.execute("SELECT product, price, date FROM orders WHERE user_email=? ORDER BY date DESC",
               (session["user"],))
@@ -562,5 +592,6 @@ def my_orders():
 if __name__ == "__main__":
 
     print("Starting Flask Server...")
-
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    initialize_app()
+    debug_mode = os.getenv("DEBUG", "False").lower() in ("1", "true", "yes")
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=debug_mode)

@@ -2,6 +2,7 @@
 # RETAIL AI SYSTEM (ALIGNED TO YOUR DATASET)
 # =========================================================
 
+import os
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -38,7 +39,8 @@ class RetailAI:
     def update_from_database(self):
         """Load real orders from database.db and update training data"""
         import sqlite3
-        conn = sqlite3.connect("database.db")
+        db_path = os.getenv("DATABASE_PATH", "database.db")
+        conn = sqlite3.connect(db_path)
     
         orders_df = pd.read_sql_query("""
             SELECT date as Date, price as Price, 1 as 'Units Sold'

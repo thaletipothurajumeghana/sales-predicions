@@ -1,6 +1,8 @@
+import os
 import sqlite3
 
-conn = sqlite3.connect("database.db")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "database.db")
+conn = sqlite3.connect(DATABASE_PATH)
 c = conn.cursor()
 
 c.execute("SELECT COUNT(*) FROM orders")
