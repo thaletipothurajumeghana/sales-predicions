@@ -1,7 +1,7 @@
 Flask==3.0.0
 numpy==2.0.0
 pandas==2.2.0
-scikit-learn==2.3.0
+scikit-learn==1.8.2
 xgboost==1.8.2
 prophet==1.1.5
 shap==1.5.2
