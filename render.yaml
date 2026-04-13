@@ -18,7 +18,5 @@ services:
         value: modified_sales_dataset.csv
       - key: DEBUG
         value: False
-      - key: PORT
-        value: 5000
       - key: PYTHON_VERSION
         value: 3.11.10
