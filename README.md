@@ -65,7 +65,7 @@ This repo includes `render.yaml` for Render service configuration. To deploy:
 4. Render will run:
    - build: `pip install -r requirements.txt`
    - start: `gunicorn app:app`
-5. Set Render environment variables for `SECRET_KEY`, `ADMIN_EMAIL`, `DATABASE_PATH`, `MODEL_DATA_PATH`, and `DEBUG`.
+5. Set Render environment variables for `SECRET_KEY`, `ADMIN_EMAIL`, `DATABASE_PATH`, `MODEL_DATA_PATH`, `DEBUG`, and `PYTHON_VERSION`.
 
 ### Environment variables
 
